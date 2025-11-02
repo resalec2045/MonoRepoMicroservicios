@@ -1,0 +1,28 @@
+jenkins:
+  systemMessage: "Jenkins configurado automáticamente con JCasC"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "admin"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  location:
+    url: "http://localhost:8090"
+  credentials:
+    system:
+      domainCredentials:
+        - credentials:
+            - string:
+                scope: GLOBAL
+                id: "sonar-token"
+                secret: ${SONAR_TOKEN}
+                description: "Token SonarQube para análisis automático"
+  unclassified:
+    sonarGlobalConfiguration:
+      installations:
+        - name: "SonarQube"
+          serverUrl: "http://sonarqube:9000"
+          credentialsId: "sonar-token"

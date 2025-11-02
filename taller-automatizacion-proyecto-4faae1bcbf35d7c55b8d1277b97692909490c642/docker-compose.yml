@@ -1,0 +1,46 @@
+version: '3.9'
+services:
+  jenkins:
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
+    container_name: jenkins
+    ports:
+      - "8090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./jenkins-init:/usr/share/jenkins/ref/init.groovy.d
+      - sonar-init:/sonar-init
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    volumes:
+      - sonar_data:/opt/sonarqube/data
+      - sonar_extensions:/opt/sonarqube/extensions
+      - ./sonarqube-init:/sonarqube-init
+      - sonar-init:/sonar-init
+  sonar-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - sonarqube
+    volumes:
+      - ./sonarqube-init:/sonarqube-init
+      - sonar-init:/sonar-init
+    entrypoint: ["/bin/sh", "-c", "chmod +x /sonarqube-init/init-sonar.sh && /sonarqube-init/init-sonar.sh"]
+volumes:
+  jenkins_home:
+  sonar_data:
+  sonar_extensions:
+  sonar-init:

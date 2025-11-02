@@ -1,0 +1,32 @@
+pipeline {
+  agent any
+  tools { jdk 'jdk17'; maven 'maven3' }
+
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+    stage('Run API Acceptance Tests') {
+      steps {
+        dir('tests-automation') {
+          sh 'mvn -q -Dtest=**/RunCucumberTests test'
+        }
+      }
+      post {
+        always {
+          // Publica JUnit (si existiera) y el HTML de Cucumber
+          junit allowEmptyResults: true, testResults: 'tests-automation/target/surefire-reports/*.xml'
+          publishHTML(target: [
+            allowMissing: true,
+            alwaysLinkToLastBuild: true,
+            keepAll: true,
+            reportDir: 'tests-automation/target',
+            reportFiles: 'cucumber-report.html',
+            reportName: 'Cucumber Report'
+          ])
+          archiveArtifacts artifacts: 'tests-automation/target/cucumber-report.*', fingerprint: true, onlyIfSuccessful: false
+        }
+      }
+    }
+  }
+}

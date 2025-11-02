@@ -1,0 +1,75 @@
+pipeline {
+  agent any
+  tools { jdk 'jdk17'; maven 'maven3' }
+  environment {
+    SONARQUBE_ENV = 'sonarqube-server'   // nombre de tu server Sonar en Jenkins
+  }
+  stages {
+    stage('Checkout') {
+      steps { checkout scm }
+    }
+
+    stage('Build & Unit Tests (users-api)') {
+      steps {
+        // Ejecutar desde la RAÍZ del repo (donde está el POM padre)
+        sh 'mvn -B -U -pl users-api -am clean verify install'
+      }
+    }
+
+    stage('SonarQube (users-api)') {
+      steps {
+        dir('users-api') {
+          withSonarQubeEnv("${SONARQUBE_ENV}") {
+            sh 'mvn -q sonar:sonar'
+          }
+        }
+      }
+    }
+
+    stage('Quality Gate') {
+      steps {
+        timeout(time: 10, unit: 'MINUTES') {
+          waitForQualityGate abortPipeline: true
+        }
+      }
+    }
+
+    stage('Build & Install users-api') {
+      steps {
+        // Ejecuta en la RAÍZ del repo (sin dir('users-api'))
+        sh 'mvn -B -U -pl users-api -am -DskipTests clean install'
+      }
+    }
+
+
+    stage('Run Acceptance Tests (tests-automation)') {
+      steps {
+        // Ejecuta en la RAÍZ del repo (sin dir('tests-automation'))
+        // OJO: aquí ya NO usamos -am para que no arrastre otros módulos
+        sh 'mvn -B -U -pl tests-automation -Dtest=**/RunCucumberTests test'
+      }
+
+          post {
+            always {
+              // JUnit del módulo de tests
+              junit 'tests-automation/target/surefire-reports/*.xml'
+
+              // Publicar HTML de Cucumber si existe
+              script {
+                if (fileExists('tests-automation/target/cucumber-html-reports/overview-features.html')) {
+                  publishHTML(target: [
+                    reportDir: 'tests-automation/target/cucumber-html-reports',
+                    reportFiles: 'overview-features.html',
+                    reportName: 'Cucumber Report'
+                  ])
+                }
+              }
+
+              // Opcional: archiva artefactos del módulo de tests
+              archiveArtifacts artifacts: 'tests-automation/target/**/*', onlyIfSuccessful: false
+            }
+          }
+    }
+
+  }
+}

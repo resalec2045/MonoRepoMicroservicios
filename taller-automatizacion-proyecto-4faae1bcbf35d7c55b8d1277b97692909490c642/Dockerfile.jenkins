@@ -1,0 +1,26 @@
+FROM jenkins/jenkins:lts-jdk17
+
+USER root
+# Instala git y curl para los scripts de inicialización
+RUN apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/*
+
+USER jenkins
+# Copia los scripts de inicialización
+COPY jenkins-init/ /usr/share/jenkins/ref/init.groovy.d/
+
+# Plugins recomendados para integración continua y SonarQube
+COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+
+# Copia el archivo de configuración de JCasC
+COPY jenkins.yaml /var/jenkins_home/casc_configs/jenkins.yaml
+ENV CASC_JENKINS_CONFIG=/var/jenkins_home/casc_configs/jenkins.yaml
+
+USER root
+# Copia el entrypoint personalizado y le da permisos de ejecución
+COPY jenkins-entrypoint.sh /usr/local/bin/jenkins-entrypoint.sh
+RUN chmod +x /usr/local/bin/jenkins-entrypoint.sh
+
+USER jenkins
+# Usa el entrypoint personalizado para Jenkins
+ENTRYPOINT ["/usr/local/bin/jenkins-entrypoint.sh"]
