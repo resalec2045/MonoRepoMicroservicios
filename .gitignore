@@ -1,0 +1,64 @@
+# -----------------------------
+# Java / Maven
+# -----------------------------
+/target/
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.jar.original
+*.log
+dependency-reduced-pom.xml
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+/out/
+
+# VS Code
+.vscode/
+
+# Node
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-error.log
+pnpm-debug.log*
+
+# Env files
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Logs and temp
+logs/
+*.log
+tmp/
+
+# Coverage
+coverage/
+
+# Specific project artifacts
+/auth-api/target/
+/Observabilidad/monitoring-service/node_modules/
+
+# Qodo workflow metadata
+.qodo/
+
+# Misc
+*.swp
+
+# Docker volumes (local dev helper - not required but convenient)
+mongo-data/
+loki-data/

@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: API REST Usuarios - Mongo + JWT
+  version: "1.1.0"
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/users:
+    post:
+      summary: Crear usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+      responses:
+        "201": { description: Creado }
+    get:
+      summary: Listar usuarios (paginado)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { description: OK }
+  /api/users/login:
+    post:
+      summary: Login con email y password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        "200": { description: OK }
+  /auth/password-reset/request:
+    post:
+      summary: Solicitar restablecimiento (respuesta neutra)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetRequest' }
+      responses:
+        "202": { description: Aceptado }
+  /auth/password-reset/confirm:
+    post:
+      summary: Confirmar restablecimiento con token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetConfirm' }
+      responses:
+        "200": { description: OK }
+components:
+  schemas:
+    UserCreate:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        username: { type: string }
+        password: { type: string, format: password, minLength: 12 }
+      required: [email, username, password]
+    LoginRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+      required: [email, password]
+    PasswordResetRequest:
+      type: object
+      properties:
+        email: { type: string, format: email }
+      required: [email]
+    PasswordResetConfirm:
+      type: object
+      properties:
+        token: { type: string }
+        newPassword: { type: string, format: password, minLength: 12 }
+      required: [token, newPassword]

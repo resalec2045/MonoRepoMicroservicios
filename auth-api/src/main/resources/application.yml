@@ -1,0 +1,15 @@
+server:
+  port: 8080
+
+spring:
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/authdb}
+
+app:
+  url: http://localhost:8080
+  jwt:
+    secret: "cambia-este-secreto-ultra-largo-y-aleatorio"
+    expiration: 3600
+  security:
+    server-secret: "otro-secreto-largo-para-hmac-de-token-reset"

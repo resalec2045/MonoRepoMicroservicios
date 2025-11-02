@@ -1,0 +1,19 @@
+<configuration scan="true">
+
+    <property name="SERVICE_NAME" value="auth-api"/>
+    <property name="ENV" value="dev"/>
+
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"service":"${SERVICE_NAME}","env":"${ENV}"}</customFields>
+        </encoder>
+    </appender>
+
+    <!-- Raíz: nivel INFO -->
+    <root level="info">
+        <appender-ref ref="JSON_CONSOLE"/>
+    </root>
+
+    <!-- Si quieres registrar debug de tu paquete -->
+    <logger name="co.com.example.auth" level="debug"/>
+</configuration>

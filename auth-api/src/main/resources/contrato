@@ -1,0 +1,467 @@
+openapi: 3.0.3
+info:
+  title: API REST Usuarios - Mongo + JWT
+  version: 1.1.0
+  description: 'API para gestión de usuarios con autenticación JWT, CRUD y paginación.
+
+    Endpoints públicos: **(POST) /api/users** (crear), **(POST) /api/users/login**
+    (login),
+
+    **(POST) /auth/password-reset/request** y **/auth/password-reset/confirm** (recuperación).
+
+    Endpoints protegidos con Bearer JWT: **listar**, **actualizar**, **eliminar**.
+
+    '
+servers:
+- url: http://localhost:8080
+  description: Local
+tags:
+- name: Auth
+  description: Login y recuperación de contraseña
+- name: Users
+  description: Operaciones de usuarios (creación y CRUD)
+paths:
+  /api/users:
+    post:
+      tags:
+      - Users
+      summary: Crear usuario
+      description: Crea un usuario (público). Requiere email único; la contraseña
+        se almacena hasheada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+            examples:
+              ejemplo:
+                value:
+                  username: andres
+                  email: andres@example.com
+                  password: FraseSeguraLarga123!
+                  role: USER
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublic'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Usuario/Email ya existe
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500': &id001
+          description: Error interno del servidor.
+    get:
+      tags:
+      - Users
+      summary: Listar usuarios con paginación
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+        required: true
+        description: Número de página (0-indexado)
+      - in: query
+        name: size
+        schema:
+          type: integer
+          minimum: 1
+          default: 10
+        required: true
+        description: Tamaño de página
+      responses:
+        '200':
+          description: Página de usuarios
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageUser'
+        '401':
+          description: No autorizado / Token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400': &id002
+          description: Solicitud inválida (errores de validación o formato).
+        '500': *id001
+  /api/users/{id}:
+    put:
+      tags:
+      - Users
+      summary: Actualizar usuario (email/role)
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+            examples:
+              ejemplo:
+                value:
+                  email: nuevo@example.com
+                  role: ADMIN
+      responses:
+        '200':
+          description: Usuario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPublic'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: No autorizado / Token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500': *id001
+    delete:
+      tags:
+      - Users
+      summary: Eliminar usuario por ID
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Eliminado (sin contenido)
+        '401':
+          description: No autorizado / Token inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Usuario no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400': *id002
+        '500': *id001
+  /api/users/login:
+    post:
+      tags:
+      - Auth
+      summary: Autenticar usuario y obtener JWT
+      description: 'Recibe credenciales por JSON (**no** por query params).
+
+        Debe responder 401 para credenciales inválidas.
+
+        '
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              ejemplo:
+                value:
+                  username: andres
+                  password: FraseSeguraLarga123!
+      responses:
+        '200':
+          description: Token JWT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                ok:
+                  value:
+                    accessToken: eyJhbGciOiJIUzI1NiJ9...
+                    tokenType: Bearer
+                    expiresIn: 3600
+        '401':
+          description: Credenciales inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400': *id002
+        '500': *id001
+        '409': &id003
+          description: Conflicto (duplicados o violación de unicidad).
+  /auth/password-reset/request:
+    post:
+      tags:
+      - password-reset
+      summary: Solicitar restablecimiento de contraseña
+      description: 'Respuesta **neutra** siempre (no revela si el email existe).
+
+        El backend envía un enlace con un **token de un solo uso** (TTL corto).
+
+        '
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+            examples:
+              ejemplo:
+                value:
+                  email: andres@example.com
+      responses:
+        '202':
+          description: Solicitud aceptada (siempre)
+          headers:
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+                example: 5
+              description: Límite de solicitudes por ventana
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+                example: 4
+            X-RateLimit-Reset:
+              schema:
+                type: integer
+                example: 1725643200
+        '429':
+          description: Demasiadas solicitudes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400': *id002
+        '500': *id001
+        '409': *id003
+  /auth/password-reset/confirm:
+    post:
+      tags:
+      - password-reset
+      summary: Confirmar restablecimiento con token
+      description: 'Cambia la contraseña usando un **token válido/no usado**.
+
+        Debe invalidar el token y revocar sesiones del usuario.
+
+        '
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+            examples:
+              ejemplo:
+                value:
+                  token: Q29vbC1SYW5kb20tVG9rZW4
+                  newPassword: FraseSeguraAunMasLarga#2025
+      responses:
+        '200':
+          description: Contraseña actualizada
+        '400':
+          description: Token inválido o contraseña débil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '410':
+          description: Token expirado, usado o bloqueado por intentos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500': *id001
+        '409': *id003
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 64a7b8f6d6e5abcd1234ef01
+        username:
+          type: string
+          example: andres
+        email:
+          type: string
+          format: email
+          example: andres@example.com
+        role:
+          type: string
+          example: USER
+      required:
+      - id
+      - username
+      - email
+      - role
+    UserCreate:
+      type: object
+      properties:
+        username:
+          type: string
+          example: andres
+        email:
+          type: string
+          format: email
+          example: andres@example.com
+        password:
+          type: string
+          format: password
+          example: FraseSeguraLarga123!
+          minLength: 12
+        role:
+          type: string
+          example: USER
+      required:
+      - username
+      - email
+      - password
+    UserUpdate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          example: nuevo@example.com
+        role:
+          type: string
+          example: ADMIN
+      required:
+      - email
+      - role
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+      required:
+      - username
+      - password
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: Token JWT
+          example: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhbmRyZXMiLCJleHAiOjE3MjU2MjAwMDB9._ABC123
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          example: 3600
+      required:
+      - accessToken
+      - tokenType
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email del usuario
+      required:
+      - email
+    PasswordResetConfirm:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Token de un solo uso enviado por email
+        newPassword:
+          type: string
+          format: password
+          minLength: 12
+          description: Contraseña nueva (política de longitud >= 12)
+      required:
+      - token
+      - newPassword
+    Error:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          example: '2025-09-07T17:30:00Z'
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Credenciales incorrectas
+        path:
+          type: string
+          example: /api/users/login
+    PageUser:
+      type: object
+      description: Respuesta paginada con usuarios (estructura similar a Spring Page)
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserPublic'
+        pageable:
+          type: object
+          properties:
+            pageNumber:
+              type: integer
+              example: 0
+            pageSize:
+              type: integer
+              example: 5
+        totalElements:
+          type: integer
+          example: 1
+        totalPages:
+          type: integer
+          example: 1
+        last:
+          type: boolean
+          example: true
