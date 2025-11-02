@@ -32,6 +32,18 @@ services:
       context: ./monitoring-service
     env_file:
       - ./monitoring-service/.env.example
+    environment:
+      - PORT=8088
+      - SERVICE_NAME=monitoring-service
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_SECURE=false
+      - SMTP_USER=david.santiago.velasco.12@gmail.com
+      - SMTP_PASS=ljzd ttcx jsnm oyja
+      - SMTP_FROM=david.santiago.velasco.12@gmail.com
+      - DEFAULT_FREQ_MS=30000
+      - REQUEST_TIMEOUT_MS=5000
+
     ports: ["8088:8088"]
     depends_on: [loki, promtail]
     labels:
@@ -45,4 +57,3 @@ networks:
 
 volumes:
   loki-data:
-

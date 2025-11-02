@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: User Profile Service (MySQL)
+  version: 1.1.0
+paths:
+  /v1/profiles/me:
+    get:
+      summary: Get my profile
+      responses: { '200': { description: OK } }
+    put:
+      summary: Upsert my profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpsert'
+      responses: { '200': { description: Updated } }
+  /v1/profiles/{userId}:
+    get:
+      summary: Get public profile by userId
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema: { type: string }
+      responses: { '200': { description: OK } }
+components:
+  schemas:
+    SocialLinks: { type: object, additionalProperties: { type: string } }
+    ProfileUpsert:
+      type: object
+      properties:
+        nickname: { type: string }
+        personal_url: { type: string }
+        contact_public: { type: boolean }
+        mailing_address: { type: string }
+        bio: { type: string }
+        organization: { type: string }
+        country: { type: string }
+        socials: { $ref: '#/components/schemas/SocialLinks' }

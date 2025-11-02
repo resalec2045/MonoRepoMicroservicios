@@ -1,0 +1,118 @@
+{
+  "info": {
+    "_postman_id": "b3f4c2e8-9a2b-4c6d-8f1f-1a2b3c4d5e6f",
+    "name": "User Profile Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección para probar el servicio de perfiles (endpoints de health y profiles)."
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token", "value": "demo-user-123", "type": "string" },
+    { "key": "userId", "value": "demo-user-123", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "description": "Rutas de salud del servicio",
+      "item": [
+        {
+          "name": "Health - /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Resultado general de salud con checks, versión y tiempo en ejecución"
+          }
+        },
+        {
+          "name": "Health - /health/live",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/live",
+              "host": ["{{base_url}}"],
+              "path": ["health","live"]
+            },
+            "description": "Liveness: indica si el servicio está vivo"
+          }
+        },
+        {
+          "name": "Health - /health/ready",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health/ready",
+              "host": ["{{base_url}}"],
+              "path": ["health","ready"]
+            },
+            "description": "Readiness: indica si el servicio está listo para recibir tráfico"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profiles",
+      "description": "Endpoints protegidos para manipular perfiles (usa header Authorization: Bearer {{token}})",
+      "item": [
+        {
+          "name": "Get My Profile - GET /v1/profiles/me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/profiles/me",
+              "host": ["{{base_url}}"],
+              "path": ["v1","profiles","me"]
+            },
+            "description": "Obtiene el perfil del usuario autenticado (DemoAuth: Authorization: Bearer <userId>)"
+          }
+        },
+        {
+          "name": "Upsert My Profile - PUT /v1/profiles/me",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"jdoe\",\n  \"personal_url\": \"https://example.com/jdoe\",\n  \"contact_public\": true,\n  \"mailing_address\": \"Calle Falsa 123\",\n  \"bio\": \"Bio de ejemplo\",\n  \"organization\": \"MiEmpresa\",\n  \"country\": \"AR\",\n  \"socials\": { \"twitter\": \"@jdoe\" }\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/profiles/me",
+              "host": ["{{base_url}}"],
+              "path": ["v1","profiles","me"]
+            },
+            "description": "Crea o actualiza el perfil del usuario autenticado."
+          }
+        },
+        {
+          "name": "Get Profile by userId - GET /v1/profiles/:userId",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/profiles/{{userId}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1","profiles","{{userId}}"],
+              "variable": [
+                { "key": "userId", "value": "{{userId}}", "description": "ID de usuario a consultar" }
+              ]
+            },
+            "description": "Obtener el perfil público (no requiere Authorization en este endpoint)"
+          }
+        }
+      ]
+    }
+  ]
+}
