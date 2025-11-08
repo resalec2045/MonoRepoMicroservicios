@@ -309,6 +309,25 @@ services:
       - profile_logs:/app/logs
       - ./user-profile-service/app/src/main/resources/logback-spring.xml:/app/resources/logback-spring.xml:ro
 
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile # Si no existe, se puede crear uno básico
+    container_name: api-gateway
+    restart: always
+    ports:
+      - "8091:8090"
+    environment:
+      AUTH_URL: http://api:8080
+      PROFILE_URL: http://profile-service:8084
+      NOTIF_URL: http://notification-service:8082
+    depends_on:
+      - api
+      - profile-service
+      - notification-service
+    networks:
+      - obs-net
+
 volumes:
   mongo_data:
   loki-data:
